@@ -1,0 +1,12 @@
+{
+  "name": "class-attendance",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.cjs",
+    "check": "node --check app.cjs && node --check server.cjs && node --check worker.mjs && node --check web/login.js && node --check web/workspace.js",
+    "build:cloud": "node scripts/build-cloud.mjs"
+  }
+}

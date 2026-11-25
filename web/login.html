@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>账号登录 | 班级出勤</title>
+  <style>
+    :root { font: 15px/1.55 "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; color: #172c36; background: #142b3a; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 18px; }
+    main { width: min(100%, 420px); padding: clamp(22px, 6vw, 35px); border-radius: 13px; background: #fff; border: 1px solid #dbe7e9; }
+    h1 { margin: 13px 0 2px; font-size: 25px; line-height: 1.35; letter-spacing: -.03em; }
+    p { margin: 0; color: #546875; font-size: 13px; }
+    .icon { position: relative; display: block; width: 38px; height: 38px; border-radius: 10px; background: #b0e3d6; }
+    .icon::before { content: ""; position: absolute; left: 12px; top: 17px; width: 14px; height: 12px; border: 1.5px solid #124742; border-radius: 3px; }
+    .icon::after { content: ""; position: absolute; left: 15px; top: 10px; width: 8px; height: 8px; border: 1.5px solid #124742; border-bottom: 0; border-radius: 5px 5px 0 0; }
+    form { margin-top: 19px; display: grid; gap: 12px; }
+    label { display: grid; gap: 4px; font-size: 13px; font-weight: 650; }
+    input, button { font: inherit; border-radius: 6px; min-height: 42px; }
+    input { width: 100%; border: 1px solid #cfdcdf; color: #172c36; padding: 8px 10px; font-weight: 400; }
+    button { margin-top: 4px; border: 1px solid #006a61; background: #006a61; color: #fff; cursor: pointer; font-size: 14px; font-weight: 700; }
+    button:hover { background: #005950; }
+    button:disabled { opacity: .65; cursor: wait; }
+    :focus-visible { outline: 2px solid #008779; outline-offset: 3px; }
+    #status { min-height: 18px; color: #9c393a; }
+  </style>
+</head>
+<body>
+  <main>
+    <span class="icon" aria-hidden="true"></span>
+    <h1>班级出勤汇总系统</h1>
+    <p>请使用已授权的账号登录。</p>
+    <form id="login" method="post">
+      <label>用户名<input id="username" autocomplete="username" maxlength="32" required autofocus></label>
+      <label>密码<input id="password" type="password" autocomplete="current-password" maxlength="128" required></label>
+      <button type="submit">登录</button>
+      <p id="status" role="status"></p>
+    </form>
+  </main>
+  <script src="/assets/login.js" defer></script>
+</body>
+</html>

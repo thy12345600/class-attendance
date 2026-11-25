@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>班级出勤汇总系统</title>
+  <style>
+    :root {
+      --nav: #142b3a;
+      --canvas: #f2f5f6;
+      --paper: #fff;
+      --ink: #172c36;
+      --muted: #556976;
+      --line: #e1e9eb;
+      --teal: #006a61;
+      --teal-light: #e1f3ee;
+      --absent: #9c393a;
+      --leave: #235d99;
+      --late: #8a580e;
+      --early: #65528e;
+      font: 15px/1.5 "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--canvas);
+      font-synthesis: none;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-padding-top: 20px; }
+    body { margin: 0; min-width: 320px; }
+    [hidden] { display: none !important; }
+    a { color: inherit; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button, input, select, textarea, a { outline-offset: 3px; }
+    :focus-visible { outline: 2px solid #008779; }
+    h1, h2, h3, p { margin: 0; }
+
+    .shell { display: grid; grid-template-columns: 212px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar {
+      position: sticky; top: 0; display: flex; flex-direction: column; height: 100dvh;
+      padding: 26px 17px 20px; color: #e6eef1; background: var(--nav);
+    }
+    .brand { display: flex; gap: 11px; align-items: center; padding: 0 4px; text-decoration: none; }
+    .brand-icon { position: relative; flex: none; width: 36px; height: 36px; border-radius: 10px; background: #88dac8; }
+    .brand-icon::before {
+      content: ""; position: absolute; inset: 8px 10px; border: 1.5px solid #113a3a; border-radius: 3px;
+    }
+    .brand-icon::after {
+      content: ""; position: absolute; width: 7px; height: 4px; top: 15px; left: 14px;
+      border-left: 1.5px solid #113a3a; border-bottom: 1.5px solid #113a3a; transform: rotate(-45deg);
+    }
+    .brand-name { display: block; font-size: 16px; font-weight: 700; letter-spacing: .02em; color: #fff; }
+    .brand-caption { display: block; font-size: 11px; margin-top: 1px; color: #a9bdc6; }
+    .nav-links { display: grid; gap: 6px; margin-top: 38px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 12px;
+      border: 0; border-radius: 7px; text-decoration: none; text-align: left;
+      color: #bccdd4; background: transparent; font-size: 14px;
+    }
+    .nav-item:hover { color: #fff; background: #203c4a; }
+    .nav-item[aria-current] { color: #e5faf3; background: #254957; }
+    .nav-symbol { position: relative; width: 16px; height: 16px; flex: none; color: #8cd3c5; }
+    .nav-symbol::before, .nav-symbol::after { content: ""; position: absolute; }
+    .nav-summary::before { inset: 2px; border: 1.4px solid currentColor; border-radius: 2px; }
+    .nav-summary::after { left: 7px; top: 4px; height: 8px; width: 1.4px; background: currentColor; }
+    .nav-records::before { inset: 1px 2px; border: 1.4px solid currentColor; border-radius: 2px; }
+    .nav-records::after { left: 5px; top: 5px; width: 6px; height: 1px; background: currentColor; box-shadow: 0 3px currentColor, 0 6px currentColor; }
+    .nav-classes::before { inset: 4px 1px 2px; border: 1.4px solid currentColor; border-radius: 2px; }
+    .nav-classes::after { left: 3px; top: 2px; width: 6px; height: 1.4px; background: currentColor; }
+    .nav-accounts::before { left: 5px; top: 1px; width: 6px; height: 6px; border: 1.4px solid currentColor; border-radius: 50%; }
+    .nav-accounts::after { inset: 8px 2px 1px; border: 1.4px solid currentColor; border-radius: 5px 5px 2px 2px; }
+    .sidebar-foot { display: flex; gap: 8px; align-items: center; margin-top: auto; padding: 14px 7px 0; border-top: 1px solid #34505c; font-size: 12px; color: #b9cdd4; }
+    .sidebar-foot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #88dac8; }
+
+    .workspace { min-width: 0; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      min-height: 62px; padding: 9px 34px; background: var(--paper); border-bottom: 1px solid var(--line);
+    }
+    .topbar-title { font-size: 13px; color: var(--muted); }
+    .topbar-actions { display: flex; gap: 13px; align-items: center; white-space: nowrap; }
+    .preview-label { padding: 4px 8px; border-radius: 4px; color: #7d4d0a; background: #fbf1dc; font-size: 11px; font-weight: 700; }
+    .logout { border: 0; background: transparent; color: var(--muted); padding: 5px 1px; font-size: 12px; }
+    .logout:hover { color: var(--teal); text-decoration: underline; }
+    .main { max-width: 1520px; margin: 0 auto; padding: 27px 34px 40px; }
+    .title-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 21px; }
+    h1 { font-size: clamp(25px, 3vw, 34px); font-weight: 750; line-height: 1.25; letter-spacing: -.035em; }
+    .title-row p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+    .today { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+    .stats { display: grid; grid-template-columns: 1.25fr repeat(4, 1fr); margin: 0 0 18px; }
+    .stat {
+      min-width: 0; padding: 13px 17px 14px; border-block: 1px solid var(--line);
+      border-right: 1px solid var(--line); background: var(--paper); color: var(--muted);
+    }
+    .stat:first-child { border: 1px solid var(--teal); border-radius: 10px 0 0 10px; color: #d3eee8; background: var(--teal); }
+    .stat:last-child { border-radius: 0 10px 10px 0; }
+    .stat dt { display: flex; align-items: center; gap: 7px; font-size: 12px; white-space: nowrap; }
+    .stat dd { margin: 3px 0 0; color: var(--ink); font-size: 30px; font-weight: 720; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .stat:first-child dd { color: #fff; }
+    .stat-dot { flex: none; width: 7px; height: 7px; border-radius: 2px; background: var(--dot); }
+    .unit { margin-left: 5px; color: #d3eee8; font-size: 11px; font-weight: 500; }
+    .tone-absent { --dot: #b95255; --badge-ink: var(--absent); --badge-bg: #fbe8e8; }
+    .tone-leave { --dot: #5485bd; --badge-ink: var(--leave); --badge-bg: #eaf1fb; }
+    .tone-late { --dot: #c38a38; --badge-ink: var(--late); --badge-bg: #fbf0db; }
+    .tone-early { --dot: #9075b6; --badge-ink: var(--early); --badge-bg: #f0eafb; }
+
+    .work-grid { display: grid; grid-template-columns: 1.13fr 1fr; align-items: stretch; gap: 17px; margin-bottom: 18px; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); }
+    .form-panel, .chart-panel { padding: 17px 19px 18px; }
+    .section-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 25px; margin-bottom: 12px; }
+    h2 { font-size: 17px; font-weight: 720; }
+    .section-title small { font-size: 11px; color: var(--muted); font-weight: 400; }
+    .section-actions { display: flex; align-items: center; gap: 7px; }
+    .section-actions a { text-decoration: none; }
+    .field-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 12px; }
+    .span-two { grid-column: 1 / -1; }
+    label.field { display: grid; min-width: 0; gap: 4px; color: #354e59; font-size: 12px; font-weight: 620; }
+    .field small { font-size: 11px; font-weight: 400; color: var(--muted); }
+    input, select, textarea {
+      display: block; min-width: 0; width: 100%; min-height: 35px; padding: 6px 9px;
+      border: 1px solid #d4e0e3; border-radius: 6px; color: var(--ink); background: #fff; font-size: 13px; font-weight: 400;
+    }
+    input::placeholder, textarea::placeholder { color: #637785; opacity: 1; }
+    input:hover, select:hover, textarea:hover { border-color: #a3bdbf; }
+    textarea { resize: vertical; min-height: 48px; }
+    .form-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+    .button {
+      min-height: 35px; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      padding: 6px 12px; border: 1px solid #d4e0e3; border-radius: 6px;
+      color: #2e4652; background: #fff; font-size: 12px; font-weight: 650; white-space: nowrap;
+    }
+    .button:hover { background: #eef5f6; border-color: #b7cbce; }
+    .button:disabled { cursor: default; opacity: .5; }
+    .primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .primary:hover { background: #005950; border-color: #005950; }
+    .plus { font-size: 16px; line-height: 1; font-weight: 500; }
+    .notice { color: var(--teal); font-size: 12px; margin-left: 4px; }
+    .notice[data-error] { color: var(--absent); }
+
+    .chart-rows { display: grid; gap: 7px; max-height: 249px; overflow-y: auto; scrollbar-gutter: stable; padding: 1px 5px 1px 1px; }
+    .chart-row {
+      display: grid; grid-template-columns: minmax(76px, 122px) minmax(26px, 1fr) 31px;
+      align-items: center; gap: 10px; width: 100%; min-height: 31px; padding: 4px 0;
+      border: 0; background: transparent; text-align: left; color: #344b56; font-size: 12px;
+    }
+    .chart-row:hover, .chart-row[aria-pressed="true"] { color: var(--teal); }
+    .chart-name { overflow-wrap: anywhere; }
+    .chart-track { height: 10px; border-radius: 3px; background: #e9f0f1; overflow: hidden; }
+    .chart-bar { display: block; height: 100%; border-radius: 3px; background: #3d948a; }
+    .chart-row:hover .chart-bar, .chart-row[aria-pressed="true"] .chart-bar { background: var(--teal); }
+    .chart-value { font-weight: 690; text-align: right; font-variant-numeric: tabular-nums; }
+    .chart-note { margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+
+    .record-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 13px 18px 10px; }
+    .record-title { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+    .record-count { font-size: 11px; font-weight: 650; padding: 2px 7px; border-radius: 4px; color: #18594f; background: var(--teal-light); }
+    .filters { display: grid; grid-template-columns: minmax(110px, 2fr) minmax(100px, 1fr) minmax(96px, 1fr) auto; gap: 8px; padding: 0 18px 12px; }
+    .search-wrap { position: relative; }
+    .search-wrap input { padding-left: 29px; }
+    .search-wrap::before { content: ""; position: absolute; top: 11px; left: 10px; width: 10px; height: 10px; border: 1.4px solid #607884; border-radius: 50%; pointer-events: none; }
+    .search-wrap::after { content: ""; position: absolute; top: 20px; left: 18px; width: 5px; height: 1.4px; transform: rotate(45deg); background: #607884; pointer-events: none; }
+    .table-wrap { overflow-x: auto; border-top: 1px solid var(--line); border-radius: 0 0 11px 11px; }
+    table { width: 100%; border-collapse: collapse; min-width: 656px; font-size: 12px; text-align: left; }
+    th, td { padding: 9px 11px; vertical-align: middle; }
+    th:first-child, td:first-child { padding-left: 18px; }
+    th:last-child, td:last-child { padding-right: 18px; }
+    th { color: #506771; background: #f5f8f8; font-weight: 650; white-space: nowrap; }
+    td { border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+    td:first-child, td:last-child { white-space: nowrap; }
+    tbody tr:hover { background: #f8fcfc; }
+    .person { font-weight: 650; color: #233e48; }
+    .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; background: var(--badge-bg); color: var(--badge-ink); font-size: 11px; white-space: nowrap; }
+    .text-button { padding: 3px 5px; border: 0; color: var(--teal); background: transparent; font-size: 12px; }
+    .text-button:hover { text-decoration: underline; }
+    .danger { color: var(--absent); }
+    .empty { padding: 22px !important; color: var(--muted); text-align: center; }
+
+    dialog { width: min(460px, calc(100% - 25px)); max-height: 85dvh; padding: 20px; border: 1px solid var(--line); border-radius: 11px; color: var(--ink); }
+    dialog::backdrop { background: #142b3a88; }
+    .dialog-actions { display: flex; align-items: flex-end; gap: 8px; }
+    .dialog-actions label { flex: 1; }
+    .class-list { list-style: none; margin: 14px 0 0; padding: 0; }
+    .class-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 2px; border-top: 1px solid var(--line); font-size: 13px; }
+    .class-list small { color: var(--muted); white-space: nowrap; }
+    .dialog-note { margin-top: 10px; min-height: 18px; }
+    .password-form { display: grid; gap: 11px; }
+    .password-form .notice { min-height: 18px; margin-left: 0; }
+    .password-form .form-actions { margin-top: 0; }
+    .topbar-status { color: var(--absent); font-size: 12px; }
+    .admin-tag { max-width: min(34vw, 230px); overflow: hidden; text-overflow: ellipsis; color: #205b50; background: var(--teal-light); }
+    .accounts-dialog { width: min(550px, calc(100% - 25px)); }
+    .account-subtitle { margin: 15px 0 7px; font-size: 14px; }
+    .account-help { margin: 7px 0; color: var(--muted); font-size: 12px; }
+    .account-list { max-height: 155px; overflow-y: auto; margin-top: 0; }
+    .account-list li { align-items: flex-start; }
+    .account-list li > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+    .account-list small { display: block; }
+    .account-actions { display: flex; flex: none; align-items: center; }
+    .account-row-name { font-weight: 650; }
+    .account-form { padding-top: 10px; border-top: 1px solid var(--line); }
+    .account-form .form-actions { flex-wrap: wrap; }
+
+    @media (min-width: 1500px) {
+      .main { padding-inline: 45px; }
+      .topbar { padding-inline: 45px; }
+    }
+    @media (max-width: 1080px) {
+      .shell { grid-template-columns: 176px minmax(0, 1fr); }
+      .topbar, .main { padding-inline: 23px; }
+      .sidebar { padding-inline: 12px; }
+      .chart-row { grid-template-columns: minmax(70px, 105px) minmax(20px, 1fr) 24px; gap: 7px; }
+    }
+    @media (max-width: 800px) {
+      .shell { grid-template-columns: minmax(0, 1fr); }
+      .sidebar { position: static; height: auto; padding: 9px 16px; flex-direction: row; justify-content: space-between; align-items: center; gap: 10px; }
+      .brand { padding: 0; gap: 7px; }
+      .brand-icon { width: 32px; height: 32px; }
+      .brand-icon::before { inset: 6px 8px; }
+      .brand-icon::after { top: 13px; left: 12px; }
+      .brand-name { font-size: 14px; white-space: nowrap; }
+      .brand-caption, .sidebar-foot { display: none; }
+      .nav-links { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; margin: 0; }
+      .nav-item { width: auto; font-size: 12px; padding: 7px 9px; }
+      .nav-symbol { display: none; }
+      .topbar { min-height: 42px; }
+      .work-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 570px) {
+      .main { padding: 17px 12px 24px; }
+      .topbar { padding-inline: 13px; }
+      .today { display: none; }
+      .title-row { margin-bottom: 14px; }
+      .stats { margin-bottom: 12px; grid-template-columns: repeat(4, 1fr); }
+      .stat { padding: 9px 8px; }
+      .stat:first-child { grid-column: 1 / -1; border-radius: 9px 9px 0 0; padding-inline: 11px; display: flex; align-items: baseline; justify-content: space-between; }
+      .stat:nth-child(2) { border-left: 1px solid var(--line); border-radius: 0 0 0 9px; }
+      .stat:last-child { border-radius: 0 0 9px 0; }
+      .stat dd { font-size: 24px; }
+      .work-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
+      .form-panel, .chart-panel { padding: 13px; }
+      .record-head { padding-inline: 12px; }
+      .filters { grid-template-columns: 1fr 1fr auto; padding-inline: 12px; }
+      .search-wrap { grid-column: 1 / -1; }
+    }
+    @media (max-width: 360px) {
+      .nav-item { padding-inline: 5px; }
+      .sidebar { padding-inline: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="shell" hidden>
+    <aside class="sidebar" aria-label="工作台导航">
+      <a class="brand" href="#overview" aria-label="班级出勤汇总系统首页">
+        <span class="brand-icon" aria-hidden="true"></span>
+        <span><span class="brand-name">班级出勤</span><span class="brand-caption">缺勤登记与统计</span></span>
+      </a>
+      <nav class="nav-links">
+        <a class="nav-item" id="navOverview" href="#overview" aria-current="location"><span class="nav-symbol nav-summary" aria-hidden="true"></span>出勤总览</a>
+        <a class="nav-item" id="navRecords" href="#records"><span class="nav-symbol nav-records" aria-hidden="true"></span>缺勤明细</a>
+        <button class="nav-item" id="openClasses" type="button"><span class="nav-symbol nav-classes" aria-hidden="true"></span>班级管理</button>
+        <button class="nav-item" id="openAccounts" type="button" hidden><span class="nav-symbol nav-accounts" aria-hidden="true"></span>账号管理</button>
+      </nav>
+      <p class="sidebar-foot">仅限授权账号访问</p>
+    </aside>
+
+    <div class="workspace" id="overview">
+      <header class="topbar">
+        <span class="topbar-title">出勤工作台</span>
+        <div class="topbar-actions">
+          <span class="preview-label admin-tag" id="accountTag"></span>
+          <button class="logout" id="openPassword" type="button">修改密码</button>
+          <button class="logout" id="logout" type="button">退出登录</button>
+        </div>
+      </header>
+
+      <main class="main">
+        <div class="title-row">
+          <div>
+            <h1>班级出勤汇总系统</h1>
+            <p>登记学生缺勤，按班级查看记录和统计。</p>
+          </div>
+          <time class="today" id="today"></time>
+        </div>
+
+        <p class="topbar-status" id="workspaceNotice" role="status" hidden></p>
+
+        <dl class="stats" aria-label="缺勤统计">
+          <div class="stat"><dt>缺勤总记录</dt><dd><span id="statTotal">0</span><span class="unit">条</span></dd></div>
+          <div class="stat tone-absent"><dt><span class="stat-dot" aria-hidden="true"></span>旷课</dt><dd id="statAbsent">0</dd></div>
+          <div class="stat tone-leave"><dt><span class="stat-dot" aria-hidden="true"></span>请假</dt><dd id="statLeave">0</dd></div>
+          <div class="stat tone-late"><dt><span class="stat-dot" aria-hidden="true"></span>迟到</dt><dd id="statLate">0</dd></div>
+          <div class="stat tone-early"><dt><span class="stat-dot" aria-hidden="true"></span>早退</dt><dd id="statEarly">0</dd></div>
+        </dl>
+
+        <div class="work-grid">
+          <section class="panel form-panel" id="entry" aria-labelledby="entryTitle">
+            <div class="section-title"><h2 id="entryTitle">登记缺勤</h2><small>保存后计入统计</small></div>
+            <form id="recordForm">
+              <div class="field-grid">
+                <label class="field">日期<input id="recDate" type="date" required></label>
+                <label class="field">班级<select id="recClass" required></select></label>
+                <label class="field">学生姓名<input id="recName" placeholder="填写学生姓名" maxlength="40" required></label>
+                <label class="field">缺勤类型<select id="recType" required></select></label>
+                <label class="field"><span>课程节次 <small>选填</small></span><input id="recLesson" placeholder="如第 1–2 节" maxlength="40"></label>
+                <label class="field"><span>备注 <small>选填</small></span><input id="recRemark" placeholder="填写事由" maxlength="180"></label>
+              </div>
+              <div class="form-actions">
+                <button class="button primary" id="saveRecord" type="submit"><span class="plus" aria-hidden="true">＋</span><span id="saveLabel">保存缺勤记录</span></button>
+                <button class="button" type="button" id="resetRecord">清空</button>
+                <p class="notice" id="formNotice" role="status"></p>
+              </div>
+            </form>
+          </section>
+          <section class="panel chart-panel" aria-labelledby="chartTitle">
+            <div class="section-title"><h2 id="chartTitle">各班缺勤统计</h2><small>单位 人次</small></div>
+            <div id="classChart" class="chart-rows"></div>
+            <p class="chart-note">点击班级查看对应明细。同一学生可计入多次。</p>
+          </section>
+        </div>
+
+        <section class="panel" id="records" aria-labelledby="recordsTitle">
+          <div class="record-head">
+            <div class="record-title"><h2 id="recordsTitle">缺勤明细</h2><span class="record-count" id="recordCount" role="status"></span></div>
+            <button class="button" id="exportCsv" type="button"><span aria-hidden="true">↓</span>导出 CSV</button>
+          </div>
+          <div class="filters">
+            <div class="search-wrap"><input type="search" id="filterName" aria-label="按学生姓名搜索" placeholder="搜索学生姓名" autocomplete="off"></div>
+            <select id="filterClass" aria-label="按班级筛选"></select>
+            <select id="filterType" aria-label="按缺勤类型筛选"></select>
+            <button class="button" id="resetFilters" type="button">重置筛选</button>
+          </div>
+          <div class="table-wrap" tabindex="0" role="region" aria-labelledby="recordsTitle">
+            <table>
+              <thead><tr><th scope="col">日期</th><th scope="col">学生姓名</th><th scope="col">班级</th><th scope="col">缺勤类型</th><th scope="col">节次</th><th scope="col">备注</th><th id="recordOperations" scope="col">操作</th></tr></thead>
+              <tbody id="recordRows"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="classesDialog" aria-labelledby="classesTitle">
+    <div class="section-title">
+      <h2 id="classesTitle">班级管理</h2>
+      <div class="section-actions">
+        <a class="button" href="/api/classes/export" download>导出班级名单</a>
+        <form method="dialog"><button class="button" type="submit">关闭</button></form>
+      </div>
+    </div>
+    <form id="classForm" class="dialog-actions">
+      <label class="field">班级名称<input id="className" required maxlength="36" placeholder="如机电 2601 班"></label>
+      <button class="button primary" type="submit">新增班级</button>
+    </form>
+    <p class="notice dialog-note" id="classNotice" role="status"></p>
+    <ul class="class-list" id="classList"></ul>
+  </dialog>
+
+  <dialog class="accounts-dialog" id="accountsDialog" aria-labelledby="accountsTitle">
+    <div class="section-title">
+      <h2 id="accountsTitle">账号管理</h2>
+      <form method="dialog"><button class="button" type="submit">关闭</button></form>
+    </div>
+    <p class="account-help">录入员可查看名单、统计和登记缺勤。</p>
+    <h3 class="account-subtitle">现有账号</h3>
+    <ul class="class-list account-list" id="accountList"></ul>
+    <p class="notice dialog-note" id="accountsNotice" role="status"></p>
+    <form class="password-form account-form" id="accountForm">
+      <h3 class="account-subtitle" id="accountFormTitle">新增录入员账号</h3>
+      <label class="field" id="accountNameField">用户名<input id="newAccountName" maxlength="32" autocomplete="off" aria-describedby="accountNameHint" required><small id="accountNameHint">可用英文字母、数字、下划线和短横线。</small></label>
+      <label class="field"><span id="accountPasswordLabel">初始密码</span><input id="newAccountPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" required><small>至少 10 个字符。</small></label>
+      <label class="field">确认密码<input id="confirmAccountPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" required></label>
+      <div class="form-actions">
+        <button class="button primary" id="submitAccount" type="submit">新增账号</button>
+        <button class="button" id="cancelAccountReset" type="button" hidden>取消重置</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="passwordDialog" aria-labelledby="passwordTitle">
+    <div class="section-title">
+      <h2 id="passwordTitle">修改管理员密码</h2>
+      <form method="dialog"><button class="button" type="submit">关闭</button></form>
+    </div>
+    <form id="passwordForm" class="password-form">
+      <label class="field">当前密码<input id="currentPassword" type="password" maxlength="128" autocomplete="current-password" required></label>
+      <label class="field">新密码<input id="nextPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" required></label>
+      <label class="field">确认新密码<input id="confirmPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" required></label>
+      <div class="form-actions">
+        <button class="button primary" type="submit">保存新密码</button>
+      </div>
+      <p class="notice" id="passwordNotice" role="status"></p>
+    </form>
+  </dialog>
+  <div class="main" id="loadError" hidden>
+    <h1>暂时无法载入工作台</h1>
+    <p>请刷新页面重试。</p>
+  </div>
+  <script src="/assets/workspace.js" defer></script>
+</body>
+</html>

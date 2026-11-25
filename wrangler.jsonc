@@ -1,0 +1,16 @@
+{
+  "name": "class-attendance-thy",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-30",
+  "workers_dev": true,
+  "preview_urls": false,
+  "durable_objects": {
+    "bindings": [
+      { "name": "ATTENDANCE_STATE", "class_name": "AttendanceState" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["AttendanceState"] }
+  ],
+  "build": { "command": "node scripts/build-cloud.mjs" }
+}

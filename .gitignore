@@ -1,0 +1,10 @@
+.data/
+.wrangler/
+generated/
+node_modules/
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.log
+.DS_Store
