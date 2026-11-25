@@ -2,7 +2,9 @@
 
 用于登记、查询和汇总班级缺勤。管理员可以维护班级、导出 CSV，并创建、重置和停用录入员账号。
 
-![登录界面](docs/preview.png)
+[GitHub Pages 公开演示](https://thy12345600.github.io/class-attendance/)可以试用登记、统计和导出。演示加载虚构数据，改动随刷新清除。
+
+![自托管版本的登录界面](docs/preview.png)
 
 ## 本地运行
 
@@ -21,9 +23,9 @@ npm start
 - `server.cjs` 是本地 Node.js 入口。
 - `worker.mjs` 和 `wrangler.jsonc` 配置线上 Cloudflare Worker 与 SQLite Durable Object。
 - `web/` 包含登录页面与工作台。
-- `docs/` 用于 GitHub Pages 入口。
+- `docs/` 包含 GitHub Pages 的静态公开演示。
 
-线上服务在服务端校验身份，使用 SQLite 持久保存共享名单与缺勤记录。公开源码包不包含运行数据和凭据。
+自托管版本在服务端校验身份并保存共享数据。公开源码包不包含任何实际运行数据或凭据。
 
 ```sh
 npm run check
