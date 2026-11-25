@@ -299,9 +299,12 @@ function createAttendanceApp({ store, sessions = new Map(), attempts = new Map()
 
       if (method === "POST" && route === "/api/login") {
         const input = await readBody(request, 2048);
-        const key = "login:" + request.socket.remoteAddress;
-        if (!loginGate(key, 8)) return json(response, 429, { error: "尝试次数过多，请 15 分钟后重试。" });
         const username = normalizedUsername(input?.username);
+        const address = request.socket.remoteAddress;
+        const key = "login-account:" + address + ":" + (usernamePattern.test(username) ? username : "invalid:");
+        if (!loginGate("login-address:" + address, 80) || !loginGate(key, 8)) {
+          return json(response, 429, { error: "尝试次数过多，请 15 分钟后重试。" });
+        }
         const account = findAccount(username);
         const password = input?.password;
         if (!passwordIsValid(password) || !await correctPassword(password, account?.credential || admin) ||

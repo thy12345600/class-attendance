@@ -482,6 +482,7 @@
           filterClass.value = name;
           renderFilters();
           location.hash = "records";
+          byId("records").scrollIntoView({ block: "start" });
           filterClass.focus({ preventScroll: true });
         });
         return row;
@@ -651,7 +652,7 @@
 
     function csvCell(value) {
       let text = String(value ?? "");
-      if (/^\s*[=+@-]|^[\r\n\t]/.test(text)) text = "'" + text;
+      if (/^\s*[=+@\-＝＋＠－]|^[\r\n\t]/.test(text)) text = "'" + text;
       return '"' + text.replaceAll('"', '""') + '"';
     }
 
