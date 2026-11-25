@@ -349,8 +349,36 @@
       return date.getFullYear() + "-" + month + "-" + day;
     }
 
+    const rosterClasses = [
+      "24汽服（本）民太安订单班",
+      "24汽服（本）管理营销班",
+      "24汽服（本）技术技能一班",
+      "24汽服（本）技术技能二班",
+      "24新能源（本）一班",
+      "24新能源（本）二班",
+      "24新能源（本）三班",
+      "24新能源（本）四班",
+      "24新能源（本）五班",
+      "24新能源（本）六班",
+      "25汽服（本）一班",
+      "25新能源（本）一班",
+      "25新能源（本）二班",
+      "25新能源（本）三班",
+      "25新能源（本）四班",
+      "25汽营（专）一班",
+      "25新能源（专）一班",
+      "26汽服（本）一班",
+      "26新能源（本）一班",
+      "26新能源（本）二班",
+      "26新能源（本）三班",
+      "26新能源（本）四班",
+      "26新能源（专）一班",
+      "26汽营（专）一班",
+      "26汽制（专）一班"
+    ];
+
     function sampleData() {
-      const classes = ["车辆 2601 班", "车辆 2602 班", "新能源 2601 班", "汽车服务 2601 班"];
+      const sampleClasses = ["车辆 2601 班", "车辆 2602 班", "新能源 2601 班", "汽车服务 2601 班"];
       const samplesByClass = [
         ["请假", "迟到", "请假", "旷课", "请假", "迟到", "请假"],
         ["迟到", "请假", "早退", "请假"],
@@ -366,7 +394,7 @@
           records.push({
             id: "sample-" + index,
             date: calendarDate(Math.floor(row / 2)),
-            class: classes[classIndex],
+            class: sampleClasses[classIndex],
             name: "示例学生 " + String(index).padStart(2, "0"),
             type,
             lesson: ["第 1–2 节", "第 3–4 节", "第 5–6 节"][index % 3],
@@ -375,7 +403,7 @@
           });
         });
       }
-      return { classes, records };
+      return { classes: [...new Set([...sampleClasses, ...rosterClasses])], records };
     }
 
     function setNotice(target, message, isError = false) {
