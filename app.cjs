@@ -193,13 +193,17 @@ function createAttendanceApp({ store, sessions = new Map(), attempts = new Map()
     return typeof value === "string" && value.length <= max && (!required || value.trim().length > 0);
   }
 
+  function validDate(value) {
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const date = new Date(value);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }
+
   function validRecord(record, classes) {
     if (!record || !shortText(record.id, 80, true) || !shortText(record.name, 40, true) ||
-        !classes.has(record.class) || !types.has(record.type) ||
-        typeof record.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(record.date) ||
+        !classes.has(record.class) || !types.has(record.type) || !validDate(record.date) ||
         !shortText(record.lesson, 40) || !shortText(record.remark, 180) || record.status !== "pass") return false;
-    const parsedDate = new Date(record.date);
-    return !Number.isNaN(parsedDate.getTime()) && parsedDate.toISOString().slice(0, 10) === record.date;
+    return true;
   }
 
   function validDatabase(value) {
@@ -239,15 +243,28 @@ function createAttendanceApp({ store, sessions = new Map(), attempts = new Map()
     const name = (filters.get("name") || "").trim().toLowerCase();
     const selectedClass = filters.get("class");
     const selectedType = filters.get("type");
+    const from = filters.get("from") || "";
+    const to = filters.get("to") || "";
+    if ((from && !validDate(from)) || (to && !validDate(to))) {
+      return json(response, 400, { error: "请输入有效的日期。" });
+    }
+    if (from && to && from > to) {
+      return json(response, 400, { error: "开始日期不能晚于结束日期。" });
+    }
     const columns = ["日期", "班级", "节次", "姓名", "缺勤类型", "备注"];
     const records = database.records.filter(record =>
       record.name.toLowerCase().includes(name) &&
       (!selectedClass || record.class === selectedClass) &&
-      (!selectedType || record.type === selectedType)
+      (!selectedType || record.type === selectedType) &&
+      (!from || record.date >= from) &&
+      (!to || record.date <= to)
     ).sort((first, second) => second.date.localeCompare(first.date))
       .map(record => [record.date, record.class, record.lesson, record.name, record.type, record.remark]);
-    const date = new Intl.DateTimeFormat("sv-SE").format(new Date());
-    return downloadCsv(response, "缺勤明细-" + date + ".csv", [columns, ...records]);
+    let dateLabel = new Intl.DateTimeFormat("sv-SE").format(new Date());
+    if (from && to) dateLabel = from === to ? from : from + "至" + to;
+    else if (from) dateLabel = from + "起";
+    else if (to) dateLabel = "截至" + to;
+    return downloadCsv(response, "缺勤明细-" + dateLabel + ".csv", [columns, ...records]);
   }
 
   function loadDatabase() {

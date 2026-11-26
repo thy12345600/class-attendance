@@ -157,6 +157,12 @@
     .record-title { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
     .record-count { font-size: 11px; font-weight: 650; padding: 2px 7px; border-radius: 4px; color: #18594f; background: var(--teal-light); }
     .filters { display: grid; grid-template-columns: minmax(110px, 2fr) minmax(100px, 1fr) minmax(96px, 1fr) auto; gap: 8px; padding: 0 18px 12px; }
+    .date-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 12px; padding: 0 18px 10px; }
+    .date-field { display: grid; grid-template-columns: auto minmax(0, 145px); align-items: center; gap: 6px; color: #354e59; font-size: 12px; font-weight: 620; }
+    .date-field input { color: var(--ink); font-weight: 400; }
+    .date-field input[aria-invalid="true"] { border-color: var(--absent); }
+    .date-message { font-size: 12px; color: var(--muted); }
+    .date-error { width: 100%; color: var(--absent); }
     .search-wrap { position: relative; }
     .search-wrap input { padding-left: 29px; }
     .search-wrap::before { content: ""; position: absolute; top: 11px; left: 10px; width: 10px; height: 10px; border: 1.4px solid #607884; border-radius: 50%; pointer-events: none; }
@@ -242,6 +248,9 @@
       .form-panel, .chart-panel { padding: 13px; }
       .record-head { padding-inline: 12px; }
       .filters { grid-template-columns: 1fr 1fr auto; padding-inline: 12px; }
+      .date-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding-inline: 12px; }
+      .date-field { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+      .date-message { grid-column: 1 / -1; }
       .search-wrap { grid-column: 1 / -1; }
     }
     @media (max-width: 360px) {
@@ -324,7 +333,17 @@
         <section class="panel" id="records" aria-labelledby="recordsTitle">
           <div class="record-head">
             <div class="record-title"><h2 id="recordsTitle">缺勤明细</h2><span class="record-count" id="recordCount" role="status"></span></div>
-            <button class="button" id="exportCsv" type="button"><span aria-hidden="true">↓</span>导出 CSV</button>
+            <button class="button" id="exportCsv" type="button"><span aria-hidden="true">↓</span>导出当前结果</button>
+          </div>
+          <div class="date-filters" role="group" aria-label="按缺勤日期筛选">
+            <label class="date-field">开始日期
+              <input id="filterFrom" type="date" min="0001-01-01" max="9999-12-31" aria-describedby="dateFilterHint dateFilterError">
+            </label>
+            <label class="date-field">结束日期
+              <input id="filterTo" type="date" min="0001-01-01" max="9999-12-31" aria-describedby="dateFilterHint dateFilterError">
+            </label>
+            <p class="date-message" id="dateFilterHint">起止当天都计入</p>
+            <p class="date-message date-error" id="dateFilterError" role="status" hidden></p>
           </div>
           <div class="filters">
             <div class="search-wrap"><input type="search" id="filterName" aria-label="按学生姓名搜索" placeholder="搜索学生姓名" autocomplete="off"></div>

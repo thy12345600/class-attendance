@@ -80,10 +80,18 @@ const formNotice = byId("formNotice");
 const filterName = byId("filterName");
 const filterClass = byId("filterClass");
 const filterType = byId("filterType");
+const filterFrom = byId("filterFrom");
+const filterTo = byId("filterTo");
 const classesDialog = byId("classesDialog");
 
 function activeRecords() {
   return database.records.filter(record => record.status === "pass");
+}
+
+function dateRangeError() {
+  if (!filterFrom.validity.valid || !filterTo.validity.valid) return "请输入有效的日期。";
+  if (filterFrom.value && filterTo.value && filterFrom.value > filterTo.value) return "开始日期不能晚于结束日期。";
+  return "";
 }
 
 function filteredRecords() {
@@ -91,7 +99,9 @@ function filteredRecords() {
   return activeRecords().filter(record =>
     record.name.toLowerCase().includes(query) &&
     (!filterClass.value || record.class === filterClass.value) &&
-    (!filterType.value || record.type === filterType.value)
+    (!filterType.value || record.type === filterType.value) &&
+    (!filterFrom.value || record.date >= filterFrom.value) &&
+    (!filterTo.value || record.date <= filterTo.value)
   ).sort((first, second) => second.date.localeCompare(first.date));
 }
 
@@ -152,14 +162,23 @@ function textCell(row, value, className) {
 
 function renderPassed() {
   const rows = byId("recordRows");
-  const records = filteredRecords();
+  const invalidDates = dateRangeError();
+  const dateError = byId("dateFilterError");
+  dateError.textContent = invalidDates;
+  dateError.hidden = !invalidDates;
+  [filterFrom, filterTo].forEach(input => {
+    if (invalidDates) input.setAttribute("aria-invalid", "true");
+    else input.removeAttribute("aria-invalid");
+  });
+  const records = invalidDates ? [] : filteredRecords();
   const total = activeRecords().length;
   byId("recordCount").textContent = records.length + " / " + total + " 条";
   byId("exportCsv").disabled = records.length === 0;
   rows.replaceChildren();
 
   if (!records.length) {
-    const cell = textCell(rows.insertRow(), total ? "没有符合筛选条件的记录。" : "暂无缺勤记录。", "empty");
+    const message = total ? "没有符合筛选条件的记录。" : "暂无缺勤记录。";
+    const cell = textCell(rows.insertRow(), invalidDates ? "请调整日期范围后查看记录。" : message, "empty");
     cell.colSpan = isAdmin ? 7 : 6;
     return;
   }
@@ -338,7 +357,13 @@ async function addClass(event) {
 }
 
 function exportCsv() {
-  const filters = new URLSearchParams({ name: filterName.value, class: filterClass.value, type: filterType.value });
+  const filters = new URLSearchParams({
+    name: filterName.value,
+    class: filterClass.value,
+    type: filterType.value,
+    from: filterFrom.value,
+    to: filterTo.value
+  });
   const link = document.createElement("a");
   link.href = "/api/export?" + filters;
   link.download = "";
@@ -473,10 +498,14 @@ byId("resetRecord").addEventListener("click", resetRecordForm);
 filterName.addEventListener("input", renderPassed);
 filterClass.addEventListener("change", renderFilters);
 filterType.addEventListener("change", renderPassed);
+filterFrom.addEventListener("input", renderPassed);
+filterTo.addEventListener("input", renderPassed);
 byId("resetFilters").addEventListener("click", () => {
   filterName.value = "";
   filterClass.value = "";
   filterType.value = "";
+  filterFrom.value = "";
+  filterTo.value = "";
   renderFilters();
 });
 byId("exportCsv").addEventListener("click", exportCsv);
